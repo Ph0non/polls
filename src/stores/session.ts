@@ -103,6 +103,9 @@ export const useSessionStore = defineStore('session', {
 			}
 
 			const preferencesStore = usePreferencesStore()
+			if (preferencesStore.user.defaultViewDatePoll === 'month-view') {
+				return 'month-view'
+			}
 			if (window.innerWidth > MOBILE_BREAKPOINT) {
 				return preferencesStore.user.defaultViewDatePoll
 			}

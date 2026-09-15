@@ -41,6 +41,12 @@
 
 Find Polls in the [Nextcloud app store](https://apps.nextcloud.com/apps/polls).
 
+## Calendar view in this fork
+
+This fork adds a monthly calendar with day details to date polls. See
+[custom installation and usage (German)](docs/CUSTOM_INSTALLATION.md) for building
+an installable package and replacing the existing `polls` app in Docker/Unraid.
+
 ## Commercial break and thank you
 Thank you guys, who support this app over the years by reporting issues, ideas and even helping analyzing difficult situations. This app can only be maintained with your help and with your proven patience. This is the biggest value the app could get over the last years since I took over the maintenance of Polls.
 

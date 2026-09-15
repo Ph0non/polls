@@ -5,6 +5,7 @@
 
 <script setup lang="ts">
 import { t } from '@nextcloud/l10n'
+import { computed } from 'vue'
 import RadioGroupDiv from '../Base/modules/RadioGroupDiv.vue'
 import { usePollStore } from '../../stores/poll.ts'
 
@@ -12,7 +13,7 @@ const emit = defineEmits(['change'])
 
 const pollStore = usePollStore()
 
-const pollForcedViewOptions = [
+const pollForcedViewOptions = computed(() => [
 	{
 		value: 'user-pref',
 		label: t('polls', 'User preference'),
@@ -25,7 +26,10 @@ const pollForcedViewOptions = [
 		value: 'list-view',
 		label: t('polls', 'List view'),
 	},
-]
+	...(pollStore.type === 'datePoll'
+		? [{ value: 'month-view', label: t('polls', 'Month view') }]
+		: []),
+])
 </script>
 
 <template>

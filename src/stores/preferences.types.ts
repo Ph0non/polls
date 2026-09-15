@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-export type ViewMode = 'table-view' | 'list-view'
+export type ViewMode = 'table-view' | 'list-view' | 'month-view'
 
 export type UserPreferences = {
 	calendarPeek: boolean

@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: 2026 Nextcloud contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+name: Build custom calendar app
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/month-calendar-view
+      - main
+    paths:
+      - 'src/**'
+      - 'tests/frontend/**'
+      - 'tests/components/**'
+      - 'l10n/**'
+      - 'lib/**'
+      - 'appinfo/**'
+      - 'package*.json'
+      - 'composer.*'
+      - '*config.*'
+      - 'Makefile'
+      - 'sync_list.txt'
+      - '.github/workflows/calendar-custom-build.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-node
+        with:
+          node-version: '24'
+      - uses: ./.github/actions/setup-composer
+        with:
+          mode: production
+          php-version: '8.2'
+          php-tools: composer
+      - name: Test and build
+        run: |
+          npm run test:calendar
+          npm run build
+          make package
+          cd build/artifacts
+          sha256sum polls.tar.gz > polls.tar.gz.sha256
+      - name: Upload unsigned installation package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: polls-calendar-${{ github.sha }}
+          path: |
+            build/artifacts/polls.tar.gz
+            build/artifacts/polls.tar.gz.sha256
+          if-no-files-found: error
+          retention-days: 30

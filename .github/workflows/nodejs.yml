@@ -21,7 +21,10 @@ jobs:
       - name: Setup node
         uses: ./.github/actions/setup-node
         with:
-          node-version: '20'
+          node-version: '24'
+
+      - name: Test calendar dates
+        run: npm run test:calendar
 
       - name: build
         run: npm run build --if-present
