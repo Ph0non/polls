@@ -57,11 +57,24 @@ it('starts saving immediately and finishes after switching days unmounts the but
 		setTo: 'yes',
 	})
 	expect(wrapper.attributes('disabled')).toBeDefined()
+	expect(wrapper.emitted('saving')?.[0][0]).toBeInstanceOf(Promise)
 	wrapper.unmount()
 	finish()
 	await flushPromises()
 	expect(mocks.success).toHaveBeenCalled()
 	expect(mocks.error).not.toHaveBeenCalled()
+})
+
+it('does not save an individual vote while a day batch disables the button', async () => {
+	const wrapper = mount(VoteButton, { props: { ...props, disabled: true } })
+	await wrapper.trigger('click')
+	expect(mocks.votes.setOptimistic).not.toHaveBeenCalled()
+	expect(mocks.votes.set).not.toHaveBeenCalled()
+	await wrapper.setProps({ disabled: false })
+	await wrapper.trigger('click')
+	await flushPromises()
+	expect(mocks.votes.set).toHaveBeenCalledOnce()
+	wrapper.unmount()
 })
 
 it('restores the previous answer when the server rejects a vote', async () => {

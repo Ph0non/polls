@@ -21,6 +21,7 @@ interface Props {
 	option: Option
 	user: User
 	immediate?: boolean
+	disabled?: boolean
 }
 
 export type richAnswer = {
@@ -28,7 +29,8 @@ export type richAnswer = {
 	translated: string
 }
 
-const { option, user, immediate = false } = defineProps<Props>()
+const { option, user, immediate = false, disabled = false } = defineProps<Props>()
+const emit = defineEmits<{ saving: [pending: Promise<void>] }>()
 const saving = ref(false)
 
 const richAnswers: { [key in Answer]: richAnswer } = {
@@ -89,7 +91,7 @@ onUnmounted(() => {
 })
 
 function setVote() {
-	if (immediate && saving.value) {
+	if (disabled || (immediate && saving.value)) {
 		return
 	}
 	const previousAnswer = vote.value.answer
@@ -98,7 +100,7 @@ function setVote() {
 	// Calendar day changes unmount the button. Start saving before navigation
 	// can cancel a pending debounce, and prevent overlapping writes for this button.
 	if (immediate) {
-		saveVote(answer, previousAnswer)
+		emit('saving', saveVote(answer, previousAnswer))
 	} else {
 		debouncedSave(answer)
 	}
@@ -109,7 +111,7 @@ function setVote() {
 	<button
 		type="button"
 		class="vote-button active"
-		:disabled="immediate && saving"
+		:disabled="disabled || (immediate && saving)"
 		:aria-busy="immediate && saving"
 		:class="[vote.answer]"
 		:aria-label="

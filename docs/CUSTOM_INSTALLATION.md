@@ -25,6 +25,14 @@ zusätzlichen Dienst, Proxy oder Docker-Container.
   Abstimmungsknopf wechselt zwischen Ja, gegebenenfalls Vielleicht und Nein bzw.
   keiner Antwort. Änderungen werden sofort gespeichert. Bei einem Fehler wird
   die vorherige Antwort wieder angezeigt; die Polls-Fehlermeldung erscheint.
+- In den Tagesdetails setzen **„Alle Ja“**, **„Alle Vielleicht“** und **„Alle Nein“**
+  die eigene Antwort für alle abstimmbaren Optionen des ausgewählten Tages.
+  „Vielleicht“ und „Nein“ erscheinen nur, wenn die Umfrage diese Antworten zulässt.
+  Gesperrte oder gelöschte Optionen bleiben unverändert; bereits passende Antworten
+  werden übersprungen. Während des Speicherns sind Einzelstimmen, Tageswechsel
+  und weitere Sammelabstimmungen gesperrt. Bei einzelnen Fehlern bleiben erfolgreich
+  gespeicherte Stimmen erhalten; fehlgeschlagene Stimmen werden zurückgesetzt und
+  ihre Anzahl angezeigt. Anschließend lassen sich einzelne Stunden weiter anpassen.
 - Ergebnisse und Teilnehmernamen bleiben an die jeweiligen Polls-Berechtigungen
   gebunden. Ein öffentlicher Besucher muss sich über den bisherigen Gastablauf
   anmelden, bevor er abstimmen kann.

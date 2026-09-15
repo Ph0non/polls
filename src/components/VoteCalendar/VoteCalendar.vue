@@ -5,10 +5,12 @@
 
 <script setup lang="ts">
 import type { Option } from '../../stores/options.types.ts'
+import type { Answer } from '../../stores/votes.types.ts'
 
+import { showError, showSuccess } from '@nextcloud/dialogs'
 import { t } from '@nextcloud/l10n'
 import { DateTime } from 'luxon'
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import PreviousIcon from 'vue-material-design-icons/ChevronLeft.vue'
 import NextIcon from 'vue-material-design-icons/ChevronRight.vue'
@@ -44,6 +46,14 @@ const grouped = computed(() =>
 const dates = computed(() => [...grouped.value.keys()])
 const selected = ref('')
 const displayedMonth = ref('')
+const savingDay = ref(false)
+const pendingVoteSaves = ref(0)
+const votesBusy = computed(() => savingDay.value || pendingVoteSaves.value > 0)
+const daySaveStatus = ref('')
+let unmounted = false
+onBeforeUnmount(() => {
+	unmounted = true
+})
 const month = computed(() =>
 	DateTime.fromISO(displayedMonth.value || today.value, { zone: timezone.value })
 		.setLocale(locale.value)
@@ -56,6 +66,7 @@ const weeks = computed(() => {
 	)
 })
 const selectedOptions = computed(() => grouped.value.get(selected.value) ?? [])
+const votableOptions = computed(() => selectedOptions.value.filter(isVotable))
 const optionDates = computed(
 	() =>
 		new Map(
@@ -147,6 +158,92 @@ function isVotable(option: Option) {
 	)
 }
 
+async function trackVoteSaving(pending: Promise<void>) {
+	pendingVoteSaves.value += 1
+	try {
+		await pending
+	} finally {
+		pendingVoteSaves.value -= 1
+	}
+}
+
+function supportsAnswer(value: Answer) {
+	return (
+		value === 'yes'
+		|| (value === 'maybe' && pollStore.configuration.allowMaybe)
+		|| (value === 'no' && pollStore.configuration.useNo)
+	)
+}
+
+function hasDayChanges(value: Answer) {
+	return votableOptions.value.some((option) => answer(option) !== value)
+}
+
+async function setDayAnswer(value: Answer) {
+	if (votesBusy.value || !supportsAnswer(value) || !hasDayChanges(value)) {
+		return
+	}
+	// Keep the clicked day's options even if a server update changes the selection.
+	const optionIds = votableOptions.value
+		.filter((option) => answer(option) !== value)
+		.map((option) => option.id)
+	const date = selectedDate.value.toLocaleString(DateTime.DATE_HUGE)
+	const pollId = pollStore.id
+	const userId = sessionStore.currentUser.id
+	const publicToken = sessionStore.publicToken
+	const sameSession = () =>
+		pollStore.id === pollId
+		&& sessionStore.currentUser.id === userId
+		&& sessionStore.publicToken === publicToken
+	let saved = 0
+	let failed = 0
+	savingDay.value = true
+	daySaveStatus.value = ''
+	try {
+		// The API returns updated vote/option stores. Save sequentially to avoid
+		// out-of-order responses overwriting another option's saved answer.
+		for (const id of optionIds) {
+			if (unmounted || !sameSession()) {
+				return
+			}
+			const option = optionsStore.options.find((option) => option.id === id)
+			if (option && isVotable(option) && supportsAnswer(value)) {
+				const previousAnswer = answer(option)
+				try {
+					const response = await votesStore.set({ option, setTo: value })
+					if (!response) {
+						throw new Error('Vote request cancelled')
+					}
+					saved += 1
+				} catch {
+					if (sameSession()) {
+						votesStore.setOptimistic({ option, setTo: previousAnswer })
+					}
+					failed += 1
+				}
+			} else {
+				failed += 1
+			}
+		}
+		if (unmounted || !sameSession()) {
+			return
+		}
+		if (failed) {
+			daySaveStatus.value = t(
+				'polls',
+				'{date}: {saved} answers saved, {failed} not saved. Please check your answers.',
+				{ date, saved, failed },
+			)
+			showError(daySaveStatus.value)
+		} else {
+			daySaveStatus.value = t('polls', 'Answers saved for {date}.', { date })
+			showSuccess(daySaveStatus.value, { timeout: 2000 })
+		}
+	} finally {
+		savingDay.value = false
+	}
+}
+
 function timeLabel(option: Option) {
 	const dates = optionDates.value.get(option.id)!
 	return dates.isSameTime
@@ -159,6 +256,9 @@ function timeLabel(option: Option) {
 }
 
 function changeMonth(step: number) {
+	if (votesBusy.value) {
+		return
+	}
 	const next = month.value.plus({ months: step })
 	displayedMonth.value = next.toISODate()!
 	selected.value =
@@ -186,7 +286,7 @@ function dayLabel(day: DateTime) {
 			<div class="vote-calendar__navigation">
 				<NcButton
 					:aria-label="t('polls', 'Previous month')"
-					:disabled="!canGoBack"
+					:disabled="votesBusy || !canGoBack"
 					@click="changeMonth(-1)">
 					<template #icon><PreviousIcon :size="20" /></template>
 				</NcButton>
@@ -195,7 +295,7 @@ function dayLabel(day: DateTime) {
 				</h2>
 				<NcButton
 					:aria-label="t('polls', 'Next month')"
-					:disabled="!canGoForward"
+					:disabled="votesBusy || !canGoForward"
 					@click="changeMonth(1)">
 					<template #icon><NextIcon :size="20" /></template>
 				</NcButton>
@@ -227,6 +327,7 @@ function dayLabel(day: DateTime) {
 								v-if="day.month === month.month"
 								type="button"
 								class="vote-calendar__day"
+								:disabled="votesBusy"
 								:class="{
 									'has-options': grouped.has(day.toISODate()!),
 									selected: selected === day.toISODate(),
@@ -297,6 +398,33 @@ function dayLabel(day: DateTime) {
 			<p v-if="hasIdentity" class="vote-calendar__hint">
 				{{ t('polls', 'Your answers are saved automatically.') }}
 			</p>
+			<div
+				v-if="votableOptions.length"
+				class="vote-calendar__day-actions"
+				role="group"
+				:aria-label="t('polls', 'Answer all options on this day')"
+				:aria-busy="savingDay">
+				<NcButton
+					:disabled="votesBusy || !hasDayChanges('yes')"
+					@click="setDayAnswer('yes')">
+					{{ t('polls', 'All Yes') }}
+				</NcButton>
+				<NcButton
+					v-if="pollStore.configuration.allowMaybe"
+					:disabled="votesBusy || !hasDayChanges('maybe')"
+					@click="setDayAnswer('maybe')">
+					{{ t('polls', 'All Maybe') }}
+				</NcButton>
+				<NcButton
+					v-if="pollStore.configuration.useNo"
+					:disabled="votesBusy || !hasDayChanges('no')"
+					@click="setDayAnswer('no')">
+					{{ t('polls', 'All No') }}
+				</NcButton>
+			</div>
+			<p role="status" class="vote-calendar__hint">
+				{{ savingDay ? t('polls', 'Saving answers…') : daySaveStatus }}
+			</p>
 			<p v-if="!selectedOptions.length" class="vote-calendar__empty">
 				{{ t('polls', 'No options on this day') }}
 			</p>
@@ -330,7 +458,9 @@ function dayLabel(day: DateTime) {
 								v-if="isVotable(option)"
 								:option="option"
 								:user="sessionStore.currentUser"
-								immediate />
+								:disabled="votesBusy"
+								immediate
+								@saving="trackVoteSaving" />
 							<VoteItem
 								v-else
 								:option="option"
@@ -457,6 +587,12 @@ function dayLabel(day: DateTime) {
 		list-style: none;
 		margin: 12px 0 0;
 		padding: 0;
+	}
+	&__day-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+		margin-block: 12px;
 	}
 	&__slot {
 		display: grid;
