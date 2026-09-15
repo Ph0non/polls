@@ -25,6 +25,7 @@ import OptionsAddModal from '../components/Modals/OptionsAddModal.vue'
 import MarkDownDescription from '../components/Poll/MarkDownDescription.vue'
 import PollHeaderButtons from '../components/Poll/PollHeaderButtons.vue'
 import PollInfoLine from '../components/Poll/PollInfoLine.vue'
+import VoteCalendar from '../components/VoteCalendar/VoteCalendar.vue'
 import VoteTable from '../components/VoteTable/VoteTable.vue'
 import { useOptionsStore } from '../stores/options.ts'
 import { usePollStore } from '../stores/poll.ts'
@@ -198,7 +199,15 @@ const appClass = computed(() => [
 				id="table-observer"
 				v-model="tableObserverVisible" />
 
+			<VoteCalendar
+				v-if="
+					pollStore.viewMode === 'month-view'
+					&& optionsStore.options.length
+				"
+				:key="pollStore.id"
+				class="area__vote" />
 			<VoteTable
+				v-else-if="pollStore.viewMode !== 'month-view'"
 				v-show="optionsStore.options.length"
 				class="area__vote"
 				:downPage="tableObserverVisible" />

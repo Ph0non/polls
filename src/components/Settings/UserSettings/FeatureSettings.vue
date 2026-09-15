@@ -8,6 +8,7 @@ import { t } from '@nextcloud/l10n'
 import { computed } from 'vue'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import InputDiv from '../../Base/modules/InputDiv.vue'
+import RadioGroupDiv from '../../Base/modules/RadioGroupDiv.vue'
 import { usePreferencesStore } from '../../../stores/preferences.ts'
 
 const preferencesStore = usePreferencesStore()
@@ -23,16 +24,11 @@ const defaultViewTextPoll = computed({
 	},
 })
 
-const defaultViewDatePoll = computed({
-	get() {
-		return preferencesStore.user.defaultViewDatePoll === 'list-view'
-	},
-	set(value) {
-		preferencesStore.user.defaultViewDatePoll = value
-			? 'list-view'
-			: 'table-view'
-	},
-})
+const dateViewOptions = [
+	{ value: 'table-view', label: t('polls', 'Table view') },
+	{ value: 'list-view', label: t('polls', 'List view') },
+	{ value: 'month-view', label: t('polls', 'Month view') },
+]
 </script>
 
 <template>
@@ -55,20 +51,11 @@ const defaultViewDatePoll = computed({
 		</div>
 
 		<div class="user_settings">
-			<NcCheckboxRadioSwitch
-				v-model="defaultViewDatePoll"
-				type="switch"
-				@update:modelValue="preferencesStore.write()">
-				{{ t('polls', 'Date polls default to list view') }}
-			</NcCheckboxRadioSwitch>
-			<div class="settings_details">
-				{{
-					t(
-						'polls',
-						'Check this, if you prefer to display date poll in a vertical view rather than in the grid view. The initial default is grid view.',
-					)
-				}}
-			</div>
+			<h3>{{ t('polls', 'Default view for date polls') }}</h3>
+			<RadioGroupDiv
+				v-model="preferencesStore.user.defaultViewDatePoll"
+				:options="dateViewOptions"
+				@update="preferencesStore.write()" />
 		</div>
 
 		<div class="user_settings">

@@ -154,11 +154,16 @@ export const usePollStore = defineStore('poll', {
 		viewMode(state): ViewMode {
 			const sessionStore = useSessionStore()
 			if (sessionStore.sessionSettings.viewModeForced) {
-				return sessionStore.sessionSettings.viewModeForced
+				return state.type === 'textPoll'
+					&& sessionStore.sessionSettings.viewModeForced === 'month-view'
+					? 'table-view'
+					: sessionStore.sessionSettings.viewModeForced
 			}
 
 			if (state.type === 'textPoll') {
-				return sessionStore.viewModeTextPoll
+				return sessionStore.viewModeTextPoll === 'month-view'
+					? 'table-view'
+					: sessionStore.viewModeTextPoll
 			}
 
 			if (state.type === 'datePoll') {

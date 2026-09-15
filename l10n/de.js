@@ -1,6 +1,21 @@
 OC.L10N.register(
     "polls",
     {
+    "Month view" : "Monatsansicht",
+    "Switch to month view" : "Zur Monatsansicht wechseln",
+    "Default view for date polls" : "Standardansicht für Terminumfragen",
+    "Previous month" : "Vorheriger Monat",
+    "Next month" : "Nächster Monat",
+    "Timezone: {timezone}" : "Zeitzone: {timezone}",
+    "Select a day to see its options" : "Wähle einen Tag, um seine Optionen zu sehen",
+    "Answered options / total options per day" : "Beantwortete Optionen / alle Optionen pro Tag",
+    "Some options have no valid date. Use table or list view to see them." : "Einige Optionen haben kein gültiges Datum. Sie sind in der Tabellen- oder Listenansicht sichtbar.",
+    "Day details" : "Tagesdetails",
+    "Your answers are saved automatically." : "Deine Antworten werden automatisch gespeichert.",
+    "No options on this day" : "Keine Optionen an diesem Tag",
+    "{date}: {answered} of {total} options answered" : "{date}: {answered} von {total} Optionen beantwortet",
+    "{date}: {total} options" : "{date}: {total} Optionen",
+
     "Poll changes" : "Änderungen der Umfrage",
     "Polls" : "Umfragen",
     "Contact group" : "Kontaktgruppe",

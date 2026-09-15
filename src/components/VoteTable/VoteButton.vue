@@ -12,7 +12,7 @@ import type { User } from '../../Types/index.ts'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { t } from '@nextcloud/l10n'
 import debounce from 'lodash/debounce'
-import { computed, onUnmounted } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 import VoteIndicator from './VoteIndicator.vue'
 import { usePollStore } from '../../stores/poll.ts'
 import { useVotesStore } from '../../stores/votes.ts'
@@ -20,6 +20,7 @@ import { useVotesStore } from '../../stores/votes.ts'
 interface Props {
 	option: Option
 	user: User
+	immediate?: boolean
 }
 
 export type richAnswer = {
@@ -27,7 +28,8 @@ export type richAnswer = {
 	translated: string
 }
 
-const { option, user } = defineProps<Props>()
+const { option, user, immediate = false } = defineProps<Props>()
+const saving = ref(false)
 
 const richAnswers: { [key in Answer]: richAnswer } = {
 	yes: { name: 'yes', translated: t('polls', 'Yes') },
@@ -43,7 +45,8 @@ const vote = computed(() =>
 	votesStore.getVote({
 		option,
 		user,
-	}),)
+	}),
+)
 
 const nextAnswer = computed<richAnswer>(() => {
 	if (['no', ''].includes(vote.value.answer)) {
@@ -57,7 +60,8 @@ const nextAnswer = computed<richAnswer>(() => {
 	return pollStore.configuration.useNo ? richAnswers.no : richAnswers['']
 })
 
-const debouncedSave = debounce(async (answer: Answer) => {
+async function saveVote(answer: Answer, previousAnswer?: Answer) {
+	saving.value = true
 	try {
 		await votesStore.set({
 			option,
@@ -65,28 +69,48 @@ const debouncedSave = debounce(async (answer: Answer) => {
 		})
 		showSuccess(t('polls', 'Vote saved'), { timeout: 2000 })
 	} catch (error) {
+		if (previousAnswer !== undefined) {
+			votesStore.setOptimistic({ option, setTo: previousAnswer })
+		}
 		if ((error as AxiosError).response?.status === 409) {
 			showError(t('polls', 'Vote already booked out'))
 		} else {
 			showError(t('polls', 'Error saving vote'))
 		}
+	} finally {
+		saving.value = false
 	}
-}, 300)
+}
+
+const debouncedSave = debounce(saveVote, 300)
 
 onUnmounted(() => {
 	debouncedSave.cancel()
 })
 
 function setVote() {
+	if (immediate && saving.value) {
+		return
+	}
+	const previousAnswer = vote.value.answer
 	const answer = nextAnswer.value.name
 	votesStore.setOptimistic({ option, setTo: answer })
-	debouncedSave(answer)
+	// Calendar day changes unmount the button. Start saving before navigation
+	// can cancel a pending debounce, and prevent overlapping writes for this button.
+	if (immediate) {
+		saveVote(answer, previousAnswer)
+	} else {
+		debouncedSave(answer)
+	}
 }
 </script>
 
 <template>
 	<button
+		type="button"
 		class="vote-button active"
+		:disabled="immediate && saving"
+		:aria-busy="immediate && saving"
 		:class="[vote.answer]"
 		:aria-label="
 			t('polls', 'Click to vote with {nextAnswer} for option {option}', {

@@ -7,6 +7,7 @@
 import { t } from '@nextcloud/l10n'
 import UserPreferenceIcon from 'vue-material-design-icons/AccountCogOutline.vue'
 import SpeakerIcon from 'vue-material-design-icons/BullhornOutline.vue'
+import MonthViewIcon from 'vue-material-design-icons/CalendarMonthOutline.vue'
 import UnlockedIcon from 'vue-material-design-icons/LockOpenVariantOutline.vue'
 import LockedIcon from 'vue-material-design-icons/LockOutline.vue'
 import TimezoneIcon from 'vue-material-design-icons/MapClockOutline.vue'
@@ -110,6 +111,8 @@ const votesStore = useVotesStore()
 				v-if="pollStore.configuration.forcedDisplayMode === 'user-pref'" />
 			<TableViewIcon
 				v-if="pollStore.configuration.forcedDisplayMode === 'table-view'" />
+			<MonthViewIcon
+				v-if="pollStore.configuration.forcedDisplayMode === 'month-view'" />
 			<ListViewIcon
 				v-if="pollStore.configuration.forcedDisplayMode === 'list-view'" />
 		</template>

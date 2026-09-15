@@ -23,6 +23,7 @@ import NcActionInput from '@nextcloud/vue/components/NcActionInput'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionSeparator from '@nextcloud/vue/components/NcActionSeparator'
 import EditAccountIcon from 'vue-material-design-icons/AccountEditOutline.vue'
+import MonthViewIcon from 'vue-material-design-icons/CalendarMonthOutline.vue'
 import ClippyIcon from 'vue-material-design-icons/ClipboardArrowLeftOutline.vue'
 import SettingsIcon from 'vue-material-design-icons/CogOutline.vue'
 import EditEmailIcon from 'vue-material-design-icons/EmailEditOutline.vue'
@@ -343,9 +344,21 @@ async function submitEmail() {
 					<ListViewIcon />
 				</template>
 			</NcActionButton>
+			<NcActionButton
+				v-if="pollStore.type === 'datePoll'"
+				v-model="viewMode"
+				value="month-view"
+				type="radio"
+				:aria-label="t('polls', 'Switch to month view')">
+				<template #icon>
+					<MonthViewIcon />
+				</template>
+			</NcActionButton>
 		</NcActionButtonGroup>
 
-		<NcActionButtonGroup name="Options order">
+		<NcActionButtonGroup
+			v-if="pollStore.viewMode !== 'month-view'"
+			name="Options order">
 			<NcActionButton
 				v-model="optionsStore.ranked"
 				value="no"

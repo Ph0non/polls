@@ -24,6 +24,7 @@
     "lint:fix": "eslint src --fix",
     "stylelint": "stylelint src/**/*{.scss,.vue,.css}",
     "stylelint:fix": "stylelint src --fix",
+    "test:calendar": "node --test tests/frontend/*.test.ts && vitest run",
     "version": "node update-app-version.mjs && git add ./appinfo/info.xml",
     "watch": "NODE_ENV=development vite --mode development build --watch"
   },
@@ -70,13 +71,17 @@
     "@types/lodash": "^4.17.25",
     "@types/luxon": "^3.7.5",
     "@types/qrcode": "^1.5.6",
+    "@vitejs/plugin-vue": "^6.0.9",
+    "@vue/test-utils": "^2.5.0",
     "@vue/tsconfig": "^0.9.1",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.5.6",
+    "happy-dom": "^20.14.5",
     "prettier": "^3.9.6",
     "terser": "^5.51.2",
     "vite": "^7.3.2",
     "vite-plugin-node-polyfills": "^0.28.0",
+    "vitest": "^5.0.1",
     "xml2js": "^0.6.2"
   },
   "engines": {
